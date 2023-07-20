@@ -33,6 +33,25 @@ describe("SiberiumBridge", function () {
       )
       expect(await siberiumUsdt.balanceOf(user.address)).to.be.eq(depositAmount);
     });
+    it("Should revert already processed deposit (doublespend protection)", async function () {
+      const { offchainService, user, siberiumBridge, siberiumUsdt } = await loadFixture(deployBridgeAndToken);
+
+      const depositAmount = ethers.parseUnits("100", 6);
+      const originTxHash = ethers.encodeBytes32String("123");
+
+      await siberiumBridge.connect(offchainService).endDeposit(
+        await siberiumUsdt.getAddress(),
+        depositAmount,
+        user.address,
+        originTxHash
+      )
+      await expect(siberiumBridge.connect(offchainService).endDeposit(
+        await siberiumUsdt.getAddress(),
+        depositAmount,
+        user.address,
+        originTxHash
+      )).to.be.reverted
+    })
   });
 
   describe("Withdrawal", function () {

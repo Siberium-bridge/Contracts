@@ -8,6 +8,7 @@ contract ExternalBridge is Ownable {
     using SafeERC20 for IERC20;
 
     mapping(address => uint256) public depositFees;
+    mapping(bytes32 => bool) public processedWithdrawals;
 
     event DepositFeeUpdated(
         address indexed token,
@@ -24,7 +25,7 @@ contract ExternalBridge is Ownable {
         address indexed token,
         address indexed receiver,
         uint256 amount,
-        bytes32 originTxId
+        bytes32 originTxHash
     );
 
     /**
@@ -54,16 +55,19 @@ contract ExternalBridge is Ownable {
      * @param token Address of token to withdraw.
      * @param amount Amount of funds to withdraw.
      * @param receiver Address to withdraw funds to.
-     * @param originTxId Transaction ID from external network that triggered this withdrawal.
+     * @param originTxHash Transaction hash from external network that triggered this withdrawal.
      */
     function endWithdrawal(
         address token,
         uint256 amount,
         address receiver,
-        bytes32 originTxId
+        bytes32 originTxHash
     ) external onlyOwner {
+        require(!processedWithdrawals[originTxHash], "Withdrawal already done");
+
         IERC20(token).safeTransfer(receiver, amount);
-        emit WithdrawalEnded(token, receiver, amount, originTxId);
+        processedWithdrawals[originTxHash] = true;
+        emit WithdrawalEnded(token, receiver, amount, originTxHash);
     }
 
     /**

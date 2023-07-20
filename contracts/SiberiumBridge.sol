@@ -6,6 +6,7 @@ import {SiberiumBridgedToken} from "./SiberiumBridgedToken.sol";
 
 contract SiberiumBridge is Ownable {
     mapping(address => uint256) public withdrawalFees;
+    mapping(bytes32 => bool) public processedDeposits;
 
     event WithdrawalFeeUpdated(
         address indexed token,
@@ -16,7 +17,7 @@ contract SiberiumBridge is Ownable {
         address indexed token,
         address indexed receiver,
         uint256 amount,
-        bytes32 originTxId
+        bytes32 originTxHash
     );
     event WithdrawalStarted(
         address indexed token,
@@ -30,16 +31,19 @@ contract SiberiumBridge is Ownable {
      * @param token Address of token to mint.
      * @param amount Amount of funds to mint.
      * @param receiver Address to mint funds to.
-     * @param originTxId Transaction ID from external network that triggered this minting.
+     * @param originTxHash Transaction hash from external network that triggered this minting.
      */
     function endDeposit(
         address token,
         uint256 amount,
         address receiver,
-        bytes32 originTxId
+        bytes32 originTxHash
     ) external onlyOwner {
+        require(!processedDeposits[originTxHash], "Deposit already done");
+
         SiberiumBridgedToken(token).mint(receiver, amount);
-        emit DepositEnded(token, receiver, amount, originTxId);
+        processedDeposits[originTxHash] = true;
+        emit DepositEnded(token, receiver, amount, originTxHash);
     }
 
     /**

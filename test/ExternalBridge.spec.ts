@@ -98,6 +98,31 @@ describe("ExternalBridge", function () {
             )
             expect(await usdt.balanceOf(user.address)).to.be.eq(balanceBefore + withdrawAmount);
         });
+
+        it("Should revert already processed withdrawal (doublespend protection)", async function () {
+            const { offchainService, user, externalBridge, usdt } = await loadFixture(deployBridgeAndToken);
+            const withdrawAmount = ethers.parseUnits("100", 6);
+            const originTxHash = ethers.encodeBytes32String("123");
+
+            // bridge should have funds for withdrawal
+            await usdt.connect(user).transfer(await externalBridge.getAddress(), withdrawAmount);
+
+            await externalBridge.connect(offchainService).endWithdrawal(
+                await usdt.getAddress(),
+                withdrawAmount,
+                user.address,
+                originTxHash
+            )
+
+            await expect(externalBridge.connect(offchainService).endWithdrawal(
+                await usdt.getAddress(),
+                withdrawAmount,
+                user.address,
+                originTxHash
+            )).to.be.reverted;
+
+        });
+
     });
 
 
