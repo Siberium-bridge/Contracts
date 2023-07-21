@@ -64,9 +64,9 @@ contract ExternalBridge is Ownable {
         bytes32 originTxHash
     ) external onlyOwner {
         require(!processedWithdrawals[originTxHash], "Withdrawal already done");
+        processedWithdrawals[originTxHash] = true;
 
         IERC20(token).safeTransfer(receiver, amount);
-        processedWithdrawals[originTxHash] = true;
         emit WithdrawalEnded(token, receiver, amount, originTxHash);
     }
 

@@ -40,9 +40,9 @@ contract SiberiumBridge is Ownable {
         bytes32 originTxHash
     ) external onlyOwner {
         require(!processedDeposits[originTxHash], "Deposit already done");
+        processedDeposits[originTxHash] = true;
 
         SiberiumBridgedToken(token).mint(receiver, amount);
-        processedDeposits[originTxHash] = true;
         emit DepositEnded(token, receiver, amount, originTxHash);
     }
 
